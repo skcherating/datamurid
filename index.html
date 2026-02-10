@@ -48,15 +48,18 @@
                 </div>
 
                 <div class="md:col-span-5">
-                    <label class="block text-gray-700 text-xs font-bold mb-2 uppercase tracking-wide" for="studentSelect">
-                        2. Find Single Student (Optional)
+                    <label class="block text-gray-700 text-xs font-bold mb-2 uppercase tracking-wide" for="studentInput">
+                        2. Type Name or ID to Filter
                     </label>
                     <div class="relative">
-                        <select id="studentSelect" onchange="renderTable()" disabled class="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-gray-100 disabled:opacity-60 cursor-not-allowed shadow-sm transition">
-                            <option value="all">-- Show Whole Class --</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <i class="fas fa-search text-xs"></i>
+                        <input type="text" 
+                               id="studentInput" 
+                               onkeyup="renderTable()" 
+                               disabled 
+                               placeholder="Select a class first..." 
+                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 disabled:opacity-60 cursor-not-allowed shadow-sm transition">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center px-3 text-gray-400">
+                            <i class="fas fa-search text-sm"></i>
                         </div>
                     </div>
                 </div>
@@ -73,18 +76,18 @@
         <div class="p-0 md:p-6">
             <div class="overflow-x-auto max-h-[600px]">
                 <table class="min-w-full leading-normal">
-                    <thead class="sticky top-0 z-10">
+                    <thead class="sticky top-0 z-10 shadow-sm">
                         <tr>
-                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-16">
                                 No.
                             </th>
                             <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                 Student Name
                             </th>
-                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-40">
                                 MyKid / ID
                             </th>
-                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-48">
                                 Class
                             </th>
                         </tr>
@@ -97,8 +100,8 @@
                     <div class="inline-block p-4 rounded-full bg-blue-50 text-blue-400 mb-4">
                         <i class="fas fa-user-graduate text-4xl"></i>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900">No students selected</h3>
-                    <p class="text-gray-500 mt-1">Please select a class from the dropdown above to view the student list.</p>
+                    <h3 class="text-lg font-medium text-gray-900" id="emptyStateTitle">No students selected</h3>
+                    <p class="text-gray-500 mt-1" id="emptyStateDesc">Please select a class from the dropdown above to view the student list.</p>
                 </div>
             </div>
         </div>
@@ -106,11 +109,9 @@
 
     <script>
         // --- 1. PARSED STUDENT DATA ---
-        // Data format: Name, ID, RawClassYear string
-        // Note: Classes are normalized in the 'init' function below.
         
         const rawData = [
-            {n:"AARDI BIN MUHAMAD HANIF",i:"201016060165",c:"PRASEKOLAH AL BIRUNI"},
+{n:"AARDI BIN MUHAMAD HANIF",i:"201016060165",c:"PRASEKOLAH AL BIRUNI"},
 {n:"AMALIA HUMAIRA BINTI ZAHARI",i:"211006110818",c:"PRASEKOLAH AL BIRUNI"},
 {n:"CHE AMMAR ARYAN BIN CHE ZANUDIN",i:"200725110415",c:"PRASEKOLAH AL BIRUNI"},
 {n:"CHE KASYAF ARYYAN BIN CHE MOHD FAIZAL ANUAR",i:"200707110315",c:"PRASEKOLAH AL BIRUNI"},
@@ -942,14 +943,13 @@
 
         // --- 2. INITIALIZATION & FORMATTING ---
         const classSelect = document.getElementById('classSelect');
-        const studentSelect = document.getElementById('studentSelect');
+        const studentInput = document.getElementById('studentInput');
         const resultsBody = document.getElementById('resultsBody');
         const emptyState = document.getElementById('emptyState');
         const totalBadge = document.getElementById('totalStudentsBadge');
 
-        // Clean and format student data
+        // Normalize student data
         const students = rawData.map(s => {
-            // Convert "TAHUN SATU AL BIRUNI" -> "Tahun 1 Al Biruni" for nicer display
             let formattedClass = s.c
                 .replace("TAHUN SATU", "Tahun 1")
                 .replace("TAHUN DUA", "Tahun 2")
@@ -959,7 +959,6 @@
                 .replace("TAHUN ENAM", "Tahun 6")
                 .replace("PRASEKOLAH", "Prasekolah");
             
-            // Capitalize proper case (e.g. AL BIRUNI -> Al Biruni)
             formattedClass = formattedClass.replace(/\w\S*/g, (txt) => {
                 return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
             });
@@ -972,12 +971,9 @@
         });
 
         function init() {
-            // Update Total Count
             totalBadge.textContent = students.length;
 
-            // Get Unique Classes & Sort them nicely
             const uniqueClasses = [...new Set(students.map(s => s.class))].sort((a, b) => {
-                // Custom sort to ensure Prasekolah -> Year 1 -> Year 6 order
                 const yearOrder = { "Prasekolah": 0, "Tahun 1": 1, "Tahun 2": 2, "Tahun 3": 3, "Tahun 4": 4, "Tahun 5": 5, "Tahun 6": 6 };
                 
                 const getYear = (str) => {
@@ -992,7 +988,6 @@
                 return a.localeCompare(b);
             });
 
-            // Populate Class Dropdown
             uniqueClasses.forEach(cls => {
                 const option = document.createElement('option');
                 option.value = cls;
@@ -1001,42 +996,32 @@
             });
         }
 
-        // --- 3. EVENT HANDLERS ---
+        // --- 3. LOGIC HANDLERS ---
         
         function handleClassChange() {
             const selectedClass = classSelect.value;
             
-            // Reset Student Dropdown
-            studentSelect.innerHTML = '<option value="all">-- Show Whole Class --</option>';
+            // Clear search input
+            studentInput.value = '';
             
             if (!selectedClass) {
-                studentSelect.disabled = true;
-                studentSelect.classList.add('bg-gray-100', 'cursor-not-allowed');
-                studentSelect.classList.remove('bg-white');
+                // Disable input if no class selected
+                studentInput.disabled = true;
+                studentInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+                studentInput.classList.remove('bg-white');
+                studentInput.placeholder = "Select a class first...";
                 renderTable([]); 
                 return;
             }
 
-            // Enable Student Dropdown
-            studentSelect.disabled = false;
-            studentSelect.classList.remove('bg-gray-100', 'cursor-not-allowed');
-            studentSelect.classList.add('bg-white');
+            // Enable Input
+            studentInput.disabled = false;
+            studentInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+            studentInput.classList.add('bg-white');
+            studentInput.placeholder = "Type name or ID...";
+            studentInput.focus();
 
-            // Find students in this class
-            const classStudents = students.filter(s => s.class === selectedClass);
-            
-            // Sort students alphabetically
-            classStudents.sort((a, b) => a.name.localeCompare(b.name));
-
-            // Populate Student Dropdown
-            classStudents.forEach(s => {
-                const option = document.createElement('option');
-                option.value = s.id;
-                option.textContent = s.name;
-                studentSelect.appendChild(option);
-            });
-
-            // Trigger render for the whole class
+            // Show all students in class initially
             renderTable();
         }
 
@@ -1047,20 +1032,27 @@
 
         function renderTable() {
             const selectedClass = classSelect.value;
-            const selectedStudentId = studentSelect.value;
+            const searchTerm = studentInput.value.toLowerCase().trim();
 
-            // Determine data to show
-            let dataToRender = [];
-            
-            if (selectedClass) {
-                if (selectedStudentId === 'all') {
-                    // Filter by Class only
-                    dataToRender = students.filter(s => s.class === selectedClass);
-                } else {
-                    // Filter by specific Student ID
-                    dataToRender = students.filter(s => s.id === selectedStudentId);
-                }
+            if (!selectedClass) {
+                resultsBody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
             }
+
+            // Filter Logic:
+            // 1. Must match Class
+            // 2. If search term exists, match Name OR ID
+            let dataToRender = students.filter(s => {
+                if (s.class !== selectedClass) return false;
+                
+                if (searchTerm.length > 0) {
+                    return s.name.toLowerCase().includes(searchTerm) || 
+                           s.id.includes(searchTerm);
+                }
+                
+                return true;
+            });
 
             // Sort alphabetically
             dataToRender.sort((a, b) => a.name.localeCompare(b.name));
@@ -1068,9 +1060,16 @@
             // Clear previous results
             resultsBody.innerHTML = '';
 
-            // Handle Empty/Initial State
+            // Handle Empty States
             if (dataToRender.length === 0) {
                 emptyState.style.display = 'block';
+                if (searchTerm.length > 0) {
+                    document.getElementById('emptyStateTitle').textContent = "No matches found";
+                    document.getElementById('emptyStateDesc').textContent = `No student found matching "${searchTerm}" in ${selectedClass}`;
+                } else {
+                    document.getElementById('emptyStateTitle').textContent = "No students found";
+                    document.getElementById('emptyStateDesc').textContent = "This class appears to be empty.";
+                }
                 return;
             } else {
                 emptyState.style.display = 'none';
@@ -1079,31 +1078,24 @@
             // Generate Rows
             dataToRender.forEach((student, index) => {
                 const row = document.createElement('tr');
-                row.className = "hover:bg-blue-50 transition duration-150";
+                row.className = "hover:bg-blue-50 transition duration-150 group";
                 
+                // Highlight matching text logic could go here, but simple render for now
                 row.innerHTML = `
-                    <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                        <p class="text-gray-900 whitespace-no-wrap font-mono text-xs text-gray-500">${index + 1}</p>
+                    <td class="px-5 py-3 border-b border-gray-200 text-sm text-gray-500">
+                        ${index + 1}
                     </td>
-                    <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs mr-3">
-                                ${student.name.charAt(0)}
-                            </div>
-                            <p class="text-gray-900 whitespace-no-wrap font-semibold">
-                                ${student.name}
-                            </p>
-                        </div>
+                    <td class="px-5 py-3 border-b border-gray-200 text-sm font-medium text-gray-900">
+                        ${student.name}
                     </td>
-                    <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                        <p class="text-gray-600 whitespace-no-wrap font-mono bg-gray-100 px-2 py-1 rounded inline-block text-xs">
+                    <td class="px-5 py-3 border-b border-gray-200 text-sm">
+                        <span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs font-mono">
                             ${student.id}
-                        </p>
+                        </span>
                     </td>
-                    <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                        <span class="relative inline-block px-3 py-1 font-semibold leading-tight text-blue-900">
-                            <span aria-hidden class="absolute inset-0 bg-blue-200 opacity-50 rounded-full"></span>
-                            <span class="relative text-xs">${student.class}</span>
+                    <td class="px-5 py-3 border-b border-gray-200 text-sm">
+                        <span class="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                            ${student.class}
                         </span>
                     </td>
                 `;
