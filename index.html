@@ -4,8 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Details Search - SK Cherating</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         /* Custom scrollbar for table */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -15,48 +21,48 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8">
 
-    <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
+    <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
         
-        <div class="bg-blue-700 p-6 text-white flex flex-col md:flex-row justify-between items-center">
+        <div class="bg-blue-800 p-6 text-white flex flex-col md:flex-row justify-between items-center shadow-md">
             <div>
                 <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                    <i class="fas fa-school"></i> 
+                    <i class="fas fa-school text-yellow-400"></i> 
                     SK Cherating Student Directory
                 </h1>
-                <p class="mt-1 text-blue-100 text-sm">Database Sistem Maklumat Murid</p>
+                <p class="mt-1 text-blue-200 text-sm tracking-wide">Sistem Maklumat Murid &copy; 2026</p>
             </div>
-            <div class="mt-4 md:mt-0 bg-blue-800 px-4 py-2 rounded-lg text-sm">
-                <i class="fas fa-database mr-2"></i> <span id="totalStudentsBadge">Loading...</span> Records
+            <div class="mt-4 md:mt-0 bg-blue-900 bg-opacity-50 px-4 py-2 rounded-lg text-sm border border-blue-700">
+                <i class="fas fa-users mr-2"></i> <span id="totalStudentsBadge" class="font-bold">0</span> Students Loaded
             </div>
         </div>
 
         <div class="p-6 bg-gray-50 border-b border-gray-200">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                 
-                <div class="md:col-span-5">
-                    <label class="block text-gray-700 text-xs font-bold mb-2 uppercase tracking-wide" for="classSelect">
-                        1. Select Class / Tingkatan
+                <div class="md:col-span-4">
+                    <label class="block text-gray-700 text-xs font-bold mb-2 uppercase tracking-wide">
+                        Filter by Class
                     </label>
                     <div class="relative">
-                        <select id="classSelect" onchange="handleClassChange()" class="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white shadow-sm transition">
+                        <select id="classSelect" onchange="handleClassChange()" class="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white shadow-sm transition text-gray-700">
                             <option value="">-- Select Class --</option>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                             <i class="fas fa-chevron-down text-xs"></i>
                         </div>
                     </div>
                 </div>
 
-                <div class="md:col-span-5">
-                    <label class="block text-gray-700 text-xs font-bold mb-2 uppercase tracking-wide" for="studentInput">
-                        2. Type Name or ID to Filter
+                <div class="md:col-span-4">
+                    <label class="block text-gray-700 text-xs font-bold mb-2 uppercase tracking-wide">
+                        Search Student
                     </label>
                     <div class="relative">
                         <input type="text" 
                                id="studentInput" 
                                onkeyup="renderTable()" 
                                disabled 
-                               placeholder="Select a class first..." 
+                               placeholder="Select class first..." 
                                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 disabled:opacity-60 cursor-not-allowed shadow-sm transition">
                         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center px-3 text-gray-400">
                             <i class="fas fa-search text-sm"></i>
@@ -64,9 +70,17 @@
                     </div>
                 </div>
 
-                <div class="md:col-span-2">
-                    <button onclick="resetApp()" class="w-full py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition duration-200 flex justify-center items-center gap-2">
-                        <i class="fas fa-sync-alt"></i> Reset
+                <div class="md:col-span-4 flex gap-2">
+                    <button onclick="exportToExcel()" id="btnExcel" disabled class="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-file-excel"></i> <span class="hidden lg:inline">Excel</span>
+                    </button>
+                    
+                    <button onclick="exportToPDF()" id="btnPdf" disabled class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-file-pdf"></i> <span class="hidden lg:inline">PDF</span>
+                    </button>
+
+                    <button onclick="resetApp()" class="px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition shadow-sm" title="Reset Filters">
+                        <i class="fas fa-sync-alt"></i>
                     </button>
                 </div>
 
@@ -74,8 +88,8 @@
         </div>
 
         <div class="p-0 md:p-6">
-            <div class="overflow-x-auto max-h-[600px]">
-                <table class="min-w-full leading-normal">
+            <div class="overflow-x-auto max-h-[600px] border rounded-lg">
+                <table class="min-w-full leading-normal" id="studentTable">
                     <thead class="sticky top-0 z-10 shadow-sm">
                         <tr>
                             <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-16">
@@ -84,10 +98,10 @@
                             <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                 Student Name
                             </th>
-                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-40">
+                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-48">
                                 MyKid / ID
                             </th>
-                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-48">
+                            <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-bold text-gray-600 uppercase tracking-wider w-64">
                                 Class
                             </th>
                         </tr>
@@ -98,12 +112,16 @@
 
                 <div id="emptyState" class="text-center py-16">
                     <div class="inline-block p-4 rounded-full bg-blue-50 text-blue-400 mb-4">
-                        <i class="fas fa-user-graduate text-4xl"></i>
+                        <i class="fas fa-folder-open text-4xl"></i>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900" id="emptyStateTitle">No students selected</h3>
-                    <p class="text-gray-500 mt-1" id="emptyStateDesc">Please select a class from the dropdown above to view the student list.</p>
+                    <h3 class="text-lg font-medium text-gray-900" id="emptyStateTitle">Ready to Search</h3>
+                    <p class="text-gray-500 mt-1" id="emptyStateDesc">Select a class above to view the student list.</p>
                 </div>
             </div>
+        </div>
+        
+        <div class="bg-gray-50 p-4 text-center border-t border-gray-200 text-xs text-gray-500">
+            Generated by Sistem Maklumat Murid &bull; SK Cherating
         </div>
     </div>
 
@@ -947,6 +965,8 @@
         const resultsBody = document.getElementById('resultsBody');
         const emptyState = document.getElementById('emptyState');
         const totalBadge = document.getElementById('totalStudentsBadge');
+        const btnExcel = document.getElementById('btnExcel');
+        const btnPdf = document.getElementById('btnPdf');
 
         // Normalize student data
         const students = rawData.map(s => {
@@ -975,15 +995,12 @@
 
             const uniqueClasses = [...new Set(students.map(s => s.class))].sort((a, b) => {
                 const yearOrder = { "Prasekolah": 0, "Tahun 1": 1, "Tahun 2": 2, "Tahun 3": 3, "Tahun 4": 4, "Tahun 5": 5, "Tahun 6": 6 };
-                
                 const getYear = (str) => {
                     for (const key in yearOrder) if(str.startsWith(key)) return yearOrder[key];
                     return 99;
                 };
-
                 const yearA = getYear(a);
                 const yearB = getYear(b);
-
                 if (yearA !== yearB) return yearA - yearB;
                 return a.localeCompare(b);
             });
@@ -996,105 +1013,96 @@
             });
         }
 
-        // --- 3. LOGIC HANDLERS ---
-        
+        // --- 3. FILTER LOGIC ---
+
+        // Helper to get current visible data
+        function getFilteredStudents() {
+            const selectedClass = classSelect.value;
+            const searchTerm = studentInput.value.toLowerCase().trim();
+
+            if (!selectedClass) return [];
+
+            return students.filter(s => {
+                if (s.class !== selectedClass) return false;
+                if (searchTerm.length > 0) {
+                    return s.name.toLowerCase().includes(searchTerm) || 
+                           s.id.includes(searchTerm);
+                }
+                return true;
+            }).sort((a, b) => a.name.localeCompare(b.name));
+        }
+
         function handleClassChange() {
             const selectedClass = classSelect.value;
-            
-            // Clear search input
             studentInput.value = '';
             
             if (!selectedClass) {
-                // Disable input if no class selected
                 studentInput.disabled = true;
                 studentInput.classList.add('bg-gray-100', 'cursor-not-allowed');
                 studentInput.classList.remove('bg-white');
-                studentInput.placeholder = "Select a class first...";
-                renderTable([]); 
+                studentInput.placeholder = "Select class first...";
+                btnExcel.disabled = true;
+                btnPdf.disabled = true;
+                renderTable(); 
                 return;
             }
 
-            // Enable Input
             studentInput.disabled = false;
             studentInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
             studentInput.classList.add('bg-white');
             studentInput.placeholder = "Type name or ID...";
             studentInput.focus();
-
-            // Show all students in class initially
+            
             renderTable();
         }
 
-        function resetApp() {
-            classSelect.value = "";
-            handleClassChange();
-        }
-
         function renderTable() {
-            const selectedClass = classSelect.value;
+            const dataToRender = getFilteredStudents();
             const searchTerm = studentInput.value.toLowerCase().trim();
 
-            if (!selectedClass) {
-                resultsBody.innerHTML = '';
-                emptyState.style.display = 'block';
-                return;
-            }
-
-            // Filter Logic:
-            // 1. Must match Class
-            // 2. If search term exists, match Name OR ID
-            let dataToRender = students.filter(s => {
-                if (s.class !== selectedClass) return false;
-                
-                if (searchTerm.length > 0) {
-                    return s.name.toLowerCase().includes(searchTerm) || 
-                           s.id.includes(searchTerm);
-                }
-                
-                return true;
-            });
-
-            // Sort alphabetically
-            dataToRender.sort((a, b) => a.name.localeCompare(b.name));
-
-            // Clear previous results
             resultsBody.innerHTML = '';
 
-            // Handle Empty States
-            if (dataToRender.length === 0) {
+            // Update Buttons State
+            if (dataToRender.length > 0) {
+                btnExcel.disabled = false;
+                btnPdf.disabled = false;
+                emptyState.style.display = 'none';
+            } else {
+                btnExcel.disabled = true;
+                btnPdf.disabled = true;
                 emptyState.style.display = 'block';
-                if (searchTerm.length > 0) {
+                
+                if (!classSelect.value) {
+                    document.getElementById('emptyStateTitle').textContent = "Ready to Search";
+                    document.getElementById('emptyStateDesc').textContent = "Select a class above to view the student list.";
+                } else if (searchTerm.length > 0) {
                     document.getElementById('emptyStateTitle').textContent = "No matches found";
-                    document.getElementById('emptyStateDesc').textContent = `No student found matching "${searchTerm}" in ${selectedClass}`;
+                    document.getElementById('emptyStateDesc').textContent = `No student found matching "${searchTerm}"`;
                 } else {
                     document.getElementById('emptyStateTitle').textContent = "No students found";
                     document.getElementById('emptyStateDesc').textContent = "This class appears to be empty.";
                 }
                 return;
-            } else {
-                emptyState.style.display = 'none';
             }
 
-            // Generate Rows
             dataToRender.forEach((student, index) => {
                 const row = document.createElement('tr');
-                row.className = "hover:bg-blue-50 transition duration-150 group";
+                row.className = "hover:bg-blue-50 transition duration-150 group border-b border-gray-100";
                 
-                // Highlight matching text logic could go here, but simple render for now
                 row.innerHTML = `
-                    <td class="px-5 py-3 border-b border-gray-200 text-sm text-gray-500">
+                    <td class="px-5 py-3 text-sm text-gray-500 font-mono">
                         ${index + 1}
                     </td>
-                    <td class="px-5 py-3 border-b border-gray-200 text-sm font-medium text-gray-900">
+                    <td class="px-5 py-3 text-sm font-medium text-gray-900">
                         ${student.name}
                     </td>
-                    <td class="px-5 py-3 border-b border-gray-200 text-sm">
-                        <span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs font-mono">
+                    <td class="px-5 py-3 text-sm">
+                        <span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs font-mono border border-gray-200">
                             ${student.id}
                         </span>
                     </td>
-                    <td class="px-5 py-3 border-b border-gray-200 text-sm">
-                        <span class="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                    <td class="px-5 py-3 text-sm">
+                        <span class="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded-full border border-blue-200">
                             ${student.class}
                         </span>
                     </td>
@@ -1103,7 +1111,76 @@
             });
         }
 
-        // Start App
+        function resetApp() {
+            classSelect.value = "";
+            handleClassChange();
+        }
+
+        // --- 4. EXPORT FUNCTIONS ---
+
+        function exportToExcel() {
+            const data = getFilteredStudents();
+            if (data.length === 0) return alert("No data to export!");
+
+            // Format data for Excel
+            const excelData = data.map((s, i) => ({
+                "No": i + 1,
+                "Name": s.name,
+                "ID / MyKid": s.id,
+                "Class": s.class
+            }));
+
+            // Create Worksheet
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Students");
+
+            // Filename
+            const className = classSelect.value.replace(/\s+/g, '_');
+            XLSX.writeFile(wb, `SK_Cherating_${className}.xlsx`);
+        }
+
+        function exportToPDF() {
+            const data = getFilteredStudents();
+            if (data.length === 0) return alert("No data to export!");
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Document Header
+            doc.setFontSize(18);
+            doc.text("SK CHERATING", 105, 15, null, null, "center");
+            
+            doc.setFontSize(12);
+            doc.text("Student Name List", 105, 22, null, null, "center");
+            
+            doc.setFontSize(10);
+            doc.text(`Class: ${classSelect.value}`, 105, 28, null, null, "center");
+
+            // Table Data
+            const tableData = data.map((s, i) => [
+                i + 1,
+                s.name,
+                s.id,
+                s.class
+            ]);
+
+            // Generate AutoTable
+            doc.autoTable({
+                head: [['No', 'Student Name', 'ID / MyKid', 'Class']],
+                body: tableData,
+                startY: 35,
+                theme: 'grid',
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [41, 128, 185] } // Blue header
+            });
+
+            // Filename
+            const className = classSelect.value.replace(/\s+/g, '_');
+            doc.save(`SK_Cherating_${className}.pdf`);
+        }
+
+        // Initialize App
         init();
 
     </script>
